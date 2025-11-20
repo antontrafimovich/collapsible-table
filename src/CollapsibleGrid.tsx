@@ -53,27 +53,73 @@ export const CollapsibleGrid: React.FC<Props> = ({ headers, rows }) => {
     setExpanded((prev) => {
       const next = new Set(prev);
       const isExpanded = prev.has(id);
-      if (isExpanded && prev.size <= MIN_EXPANDED) {
-        return prev; // keep at least two expanded
-      }
+      const expandedIds = headers.filter((h) => prev.has(h.id)).map((h) => h.id);
+      const collapsedIds = headers.filter((h) => !prev.has(h.id)).map((h) => h.id);
+
+      // With max 3 columns and rule of 2 visible, we only ever allow one collapsed at a time.
       if (isExpanded) {
-        next.delete(id);
+        if (prev.size === MIN_EXPANDED) {
+          if (collapsedIds.length === 1) {
+            // Swap: previously collapsed becomes expanded, clicked becomes collapsed
+            const collapsedId = collapsedIds[0];
+            next.add(collapsedId);
+            next.delete(id);
+            return next;
+          }
+          return prev; // already at minimum and nothing to swap
+        }
+        next.delete(id); // collapse one when all are expanded
       } else {
-        next.add(id);
+        // Clicking a collapsed column expands it; if already one collapsed, we end up with all expanded
+        if (collapsedIds.length === 1) {
+          next.add(id);
+        } else {
+          next.add(id);
+        }
       }
       return next;
     });
   };
 
   const { headerTemplate, valueTemplate } = useMemo(() => {
-    const headerTemplateStr = headers
-      .map((header) => (expanded.has(header.id) ? '1fr' : `${getCollapsedWidthCh(header.title)}ch`))
-      .join(' ');
-    // collapsed columns get 0 width so visible columns divide space equally
-    const valueTemplateStr = headers
-      .map((header) => (expanded.has(header.id) ? '1fr' : '0px'))
-      .join(' ');
-    return { headerTemplate: headerTemplateStr, valueTemplate: valueTemplateStr };
+    const collapsedList = headers.filter((h) => !expanded.has(h.id));
+    const collapsedId = collapsedList[0]?.id;
+    if (!collapsedId) {
+      const tmpl = headers.map(() => '1fr').join(' ');
+      return { headerTemplate: tmpl, valueTemplate: tmpl };
+    }
+
+    const collapsedHeader = headers.find((h) => h.id === collapsedId)!;
+    const collapsedWidth = `${getCollapsedWidthCh(collapsedHeader.title)}ch`;
+
+    let firstExpandedAssigned = false;
+    const headerTemplateArr = headers.map((header) => {
+      if (header.id === collapsedId) {
+        return collapsedWidth;
+      }
+      if (!firstExpandedAssigned) {
+        firstExpandedAssigned = true;
+        return '50%';
+      }
+      return `calc(50% - ${collapsedWidth})`;
+    });
+
+    firstExpandedAssigned = false;
+    const valueTemplateArr = headers.map((header) => {
+      if (header.id === collapsedId) {
+        return '0px';
+      }
+      if (!firstExpandedAssigned) {
+        firstExpandedAssigned = true;
+        return '50%';
+      }
+      return '50%';
+    });
+
+    return {
+      headerTemplate: headerTemplateArr.join(' '),
+      valueTemplate: valueTemplateArr.join(' '),
+    };
   }, [headers, expanded]);
 
   const headerCells = headers.map((header) => {
@@ -215,7 +261,6 @@ export const CollapsibleGridDemo: React.FC = () => {
         </Flex>
       ),
     },
-    { id: 'progress', title: 'Progress' },
     { id: 'notes', title: 'Notes' },
   ];
 
@@ -225,7 +270,6 @@ export const CollapsibleGridDemo: React.FC = () => {
       blocks: {
         status: <Tag color="green">Ready</Tag>,
         owner: 'Alice',
-        progress: '64%',
         notes: 'Waiting on final QA pass.',
       },
     },
@@ -234,7 +278,6 @@ export const CollapsibleGridDemo: React.FC = () => {
       blocks: {
         status: <Tag color="blue">In progress</Tag>,
         owner: 'Bob',
-        progress: '35%',
         notes: 'Backend contract confirmed.',
       },
     },
