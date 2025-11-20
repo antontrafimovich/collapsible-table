@@ -1,0 +1,25 @@
+:root {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f5f5f5;
+  color: #1f1f1f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+.collapsible-grid-collapse .ant-collapse-content-box {
+  padding: 0;
+}
+
+.collapsible-grid-collapse .ant-collapse-item {
+  border: none;
+}
