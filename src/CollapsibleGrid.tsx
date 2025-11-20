@@ -197,40 +197,46 @@ export const CollapsibleGrid: React.FC<Props> = ({ headers, rows }) => {
                 <Typography.Text type="secondary">Row</Typography.Text>
               </Flex>
             ),
-            children: (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: valueTemplate,
-                  gap: 8,
-                  alignItems: 'start',
-                  width: '100%',
-                }}
-              >
-                {headers.map((header, idx) => {
-                  const isExpanded = expanded.has(header.id);
-                  if (!isExpanded) {
-                    return <div key={header.id} style={{ gridColumn: idx + 1, display: 'none' }} />;
-                  }
-                  return (
-                    <Flex
-                      key={header.id}
-                      vertical
-                      style={{
-                        gridColumn: idx + 1,
-                        minWidth: 0,
-                      }}
-                      gap={4}
-                    >
-                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                        {header.title}
-                      </Typography.Text>
-                      <div>{row.blocks[header.id]}</div>
-                    </Flex>
-                  );
-                })}
-              </div>
-            ),
+            children: (() => {
+              let visibleOrder = 0;
+              return (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: valueTemplate,
+                    gap: 0,
+                    alignItems: 'start',
+                    width: '100%',
+                  }}
+                >
+                  {headers.map((header, idx) => {
+                    const isExpanded = expanded.has(header.id);
+                    if (!isExpanded) {
+                      return <div key={header.id} style={{ gridColumn: idx + 1, display: 'none' }} />;
+                    }
+                    const order = visibleOrder++;
+                    return (
+                      <Flex
+                        key={header.id}
+                        vertical
+                        style={{
+                          gridColumn: idx + 1,
+                          minWidth: 0,
+                          borderLeft: order > 0 ? '1px solid #e5e5e5' : 'none',
+                          paddingLeft: order > 0 ? 12 : 0,
+                        }}
+                        gap={4}
+                      >
+                        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                          {header.title}
+                        </Typography.Text>
+                        <div>{row.blocks[header.id]}</div>
+                      </Flex>
+                    );
+                  })}
+                </div>
+              );
+            })(),
           }))}
         />
       </Space>
