@@ -5,6 +5,9 @@ import { CaretRightOutlined } from '@ant-design/icons';
 export type HeaderCell = {
   id: string;
   title: string;
+  addonRight?: ReactNode;
+  addonBelow?: ReactNode;
+  renderHeader?: (args: { header: HeaderCell; isExpanded: boolean }) => ReactNode;
 };
 
 export type Row = {
@@ -76,6 +79,23 @@ export const CollapsibleGrid: React.FC<Props> = ({ headers, rows }) => {
   const headerCells = headers.map((header) => {
     const isExpanded = expanded.has(header.id);
     const collapsedWidthCh = getCollapsedWidthCh(header.title);
+
+    const defaultHeader = (
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Typography.Text ellipsis style={{ fontWeight: 500, flex: 1 }}>
+            {header.title}
+          </Typography.Text>
+          {header.addonRight}
+        </div>
+        {header.addonBelow && <div>{header.addonBelow}</div>}
+      </div>
+    );
+
+    const content = header.renderHeader
+      ? header.renderHeader({ header, isExpanded })
+      : defaultHeader;
+
     return (
       <button
         key={header.id}
@@ -95,9 +115,7 @@ export const CollapsibleGrid: React.FC<Props> = ({ headers, rows }) => {
         }}
       >
         <CaretRightOutlined rotate={isExpanded ? 90 : 0} />
-        <Typography.Text ellipsis style={{ fontWeight: 500, width: '100%' }}>
-          {header.title}
-        </Typography.Text>
+        {content}
       </button>
     );
   });
@@ -177,8 +195,26 @@ export const CollapsibleGrid: React.FC<Props> = ({ headers, rows }) => {
 // Demonstration with placeholder data. Remove or swap with your own.
 export const CollapsibleGridDemo: React.FC = () => {
   const headers: HeaderCell[] = [
-    { id: 'status', title: 'Status' },
-    { id: 'owner', title: 'Owner' },
+    {
+      id: 'status',
+      title: 'Status',
+      renderHeader: () => (
+        <Flex align="center" gap={8} justify="space-between">
+          <Typography.Text style={{ fontWeight: 500 }}>Status</Typography.Text>
+          <Tag color="green">Live</Tag>
+        </Flex>
+      ),
+    },
+    {
+      id: 'owner',
+      title: 'Owner',
+      renderHeader: ({ isExpanded }) => (
+        <Flex vertical gap={4}>
+          <Typography.Text style={{ fontWeight: 500 }}>Owner</Typography.Text>
+          {isExpanded && <Typography.Text type="secondary">Team A</Typography.Text>}
+        </Flex>
+      ),
+    },
     { id: 'progress', title: 'Progress' },
     { id: 'notes', title: 'Notes' },
   ];
